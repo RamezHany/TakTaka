@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload and Replace Image</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+            font-size: 1.5rem; /* Reduced size for better fit on mobile */
+        }
+
+        #uploadContainer {
+            background-color: #fff;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%; /* Adjusted for better mobile fit */
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        #logo {
+            display: block;
+            margin: 20px auto;
+            width: 100px; /* Adjusted size for mobile */
+        }
+
+        input[type="file"] {
+            padding: 12px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background-color: #f0f0f0;
+            cursor: pointer;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #6236A9;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem; /* Reduced for mobile */
+            cursor: pointer;
+            width: 100%;
+            max-width: 250px; /* Reduced size for better fit on mobile */
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #1A1736;
+        }
+
+        #message {
+            display: none;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            font-size: 0.9rem; /* Slightly smaller text for mobile */
+        }
+
+        .success {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #badbcc;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #842029;
+            border: 1px solid #f5c2c7;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.2rem;
+            }
+
+            input[type="file"] {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+
+            button {
+                font-size: 0.9rem;
+                padding: 8px 10px;
+            }
+
+            #logo {
+                width: 80px;
+            }
+
+            #uploadContainer {
+                padding: 20px;
+                max-width: 90%;
+            }
+
+            #message {
+                font-size: 0.85rem;
+            }
+
+            footer p {
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #logo {
+                width: 60px;
+            }
+
+            h1 {
+                font-size: 1rem;
+            }
+
+            input[type="file"] {
+                padding: 8px;
+                font-size: 0.85rem;
+            }
+
+            button {
+                font-size: 0.85rem;
+                padding: 6px 8px;
+            }
+
+            #uploadContainer {
+                padding: 15px;
+                max-width: 90%;
+            }
+
+            #message {
+                font-size: 0.8rem;
+            }
+
+            footer p {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+   
+
+    <div id="uploadContainer">
+        <img id="logo" src="../../assets/images/logos/creativa.png" alt="creativa">
+        <p><strong>Make sure your design is  6400x1600 and in JPEG format</strong> 
+		<br>
+		After uploading the image, the edits will be applied in 3 minutes after a success message appears, and you can leave the page.
+		
+		</p>
+        <input type="file" id="fileInput" accept="image/*">
+        <button id="uploadButton">Upload Image</button>
+        <div id="message"></div>
+    </div>
+
+<footer style="position: fixed; bottom: 0; width: 100%; background-color: #1A1736; text-align: center; padding: 10px 0; color: white;">
+  <a href="https://illustrav.com" target="_blank" style="color: white; text-decoration: none;">
+    © 2024 All Copy Rights Reserved To IllustraV
+  </a>
+</footer>
+    <script>
+        const token = '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'; // Personal access token
+        const repoOwner = 'RamezHany'; // Your GitHub username
+        const repoName = 'TakTaka'; // Your repository name
+        const folderPath = 'form/assets/images/cover'; // Folder inside the repository
+        const fixedFileName = `${folderPath}/cover.jpeg`; // Path to the file inside the folder
+
+        document.getElementById('uploadButton').addEventListener('click', async () => {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showMessage('Please select an image file.', 'error');
+                return;
+            }
+
+            const fileUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${fixedFileName}`;
+
+            // Step 1: Check if the old image exists
+            const getResponse = await fetch(fileUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                },
+            });
+
+            let sha = null;
+            if (getResponse.ok) {
+                const fileData = await getResponse.json();
+                sha = fileData.sha;
+            }
+
+            // Step 2: Read the new image file and convert to base64
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const base64Data = reader.result.split(',')[1];
+
+                const uploadData = {
+                    message: 'Upload new image and replace old one',
+                    content: base64Data,
+                    sha: sha
+                };
+
+                // Step 3: Upload new image (and overwrite old one if it exists)
+                const uploadResponse = await fetch(fileUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                    },
+                    body: JSON.stringify(uploadData),
+                });
+
+                if (uploadResponse.ok) {
+                    showMessage('Image uploaded and replaced successfully!', 'success');
+                } else {
+                    const errorData = await uploadResponse.json();
+                    showMessage('Failed to upload new image: ' + errorData.message, 'error');
+                }
+            };
+
+            reader.readAsDataURL(file);
+        });
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = type === 'success' ? 'success' : 'error';
+            messageDiv.style.display = 'block';
+        }
+		
+		
+		
+		
+		
+		
+		
+		
+    </script>
+    <script>
+    const sessionKey = "user-session-taktaka67890"; // نفس القيمة الفريدة المستخدمة في صفحة تسجيل الدخول
+
+    window.onload = function() {
+        // التحقق إذا كان المستخدم مسجلاً دخوله
+        if (localStorage.getItem("LOGIN_SESSION") !== sessionKey) {
+            // إعادة التوجيه إلى صفحة تسجيل الدخول إذا لم يكن المستخدم مسجلاً دخوله
+            window.location.href = "../../login"; // استبدل admin-login باسم ملف تسجيل الدخول
+        } else {
+            // بدء العد التنازلي لتسجيل الخروج بعد دقيقتين
+            setTimeout(logout, 900000); // 120000 مللي ثانية = 2 دقيقة
+        }
+    };
+
+    function logout() {
+        // إزالة حالة تسجيل الدخول
+        localStorage.removeItem("LOGIN_SESSION");
+        // إعادة التوجيه إلى صفحة تسجيل الدخول
+        window.location.href = "../../login"; // استبدل admin-login باسم ملف تسجيل الدخول
+    }
+  </script>
+</body>
+</html>
